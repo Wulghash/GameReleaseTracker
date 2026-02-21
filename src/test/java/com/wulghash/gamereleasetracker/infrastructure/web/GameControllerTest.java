@@ -229,6 +229,7 @@ class GameControllerTest {
                 Set.of(Platform.PC),
                 status,
                 null, null, null, null,
+                false,
                 LocalDateTime.now(), LocalDateTime.now()
         );
     }
