@@ -53,6 +53,9 @@ public class GameJpaEntity {
     private String developer;
     private String publisher;
 
+    @Column(nullable = false)
+    private boolean tba;
+
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
@@ -73,6 +76,7 @@ public class GameJpaEntity {
         entity.imageUrl = game.getImageUrl();
         entity.developer = game.getDeveloper();
         entity.publisher = game.getPublisher();
+        entity.tba = game.isTba();
         entity.createdAt = game.getCreatedAt();
         entity.updatedAt = game.getUpdatedAt();
         return entity;
@@ -90,6 +94,7 @@ public class GameJpaEntity {
                 .imageUrl(imageUrl)
                 .developer(developer)
                 .publisher(publisher)
+                .tba(tba)
                 .createdAt(createdAt)
                 .updatedAt(updatedAt)
                 .build();

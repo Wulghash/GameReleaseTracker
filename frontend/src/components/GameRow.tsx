@@ -44,8 +44,8 @@ function countdownLabel(releaseDate: string): string {
 
 export function GameRow({ game }: { game: Game }) {
   const gradient = placeholderGradient(game.title);
-  const days = game.status === "UPCOMING" ? daysUntilRelease(game.releaseDate) : null;
-  const cd = game.status === "UPCOMING" ? countdownLabel(game.releaseDate) : "";
+  const days = game.status === "UPCOMING" && !game.tba ? daysUntilRelease(game.releaseDate) : null;
+  const cd = game.status === "UPCOMING" && !game.tba ? countdownLabel(game.releaseDate) : "";
 
   return (
     <Link
@@ -104,14 +104,27 @@ export function GameRow({ game }: { game: Game }) {
 
       {/* Date + countdown */}
       <div className="flex flex-col items-end gap-1 shrink-0 pt-0.5">
-        <span className="text-lg font-bold text-gray-900 tabular-nums leading-tight">
-          {format(new Date(game.releaseDate), "MMM d")}
-        </span>
-        <span className="text-xs text-gray-400 tabular-nums">
-          {format(new Date(game.releaseDate), "yyyy")}
-        </span>
-        {cd && (
-          <span className="text-xs font-semibold text-amber-600 mt-1">{cd}</span>
+        {game.tba ? (
+          <>
+            <span className="text-lg font-bold text-gray-900 tabular-nums leading-tight">
+              {game.releaseDate.slice(0, 4)}
+            </span>
+            <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500">
+              TBA
+            </span>
+          </>
+        ) : (
+          <>
+            <span className="text-lg font-bold text-gray-900 tabular-nums leading-tight">
+              {format(new Date(game.releaseDate), "MMM d")}
+            </span>
+            <span className="text-xs text-gray-400 tabular-nums">
+              {format(new Date(game.releaseDate), "yyyy")}
+            </span>
+            {cd && (
+              <span className="text-xs font-semibold text-amber-600 mt-1">{cd}</span>
+            )}
+          </>
         )}
         {game.status === "RELEASED" && (
           <span className="text-xs font-semibold text-green-600 mt-1">Released</span>

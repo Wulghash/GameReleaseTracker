@@ -14,6 +14,7 @@ export interface Game {
   imageUrl: string | null;
   developer: string | null;
   publisher: string | null;
+  tba: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -45,6 +46,25 @@ export interface GameFormData {
   imageUrl?: string;
   developer?: string;
   publisher?: string;
+  tba?: boolean;
+}
+
+export interface RawgSearchResult {
+  rawgId: number;
+  title: string;
+  releaseDate: string | null;
+  imageUrl: string | null;
+  platforms: Platform[];
+}
+
+export interface RawgGameDetail {
+  title: string;
+  releaseDate: string | null;
+  imageUrl: string | null;
+  platforms: Platform[];
+  description: string | null;
+  developer: string | null;
+  publisher: string | null;
 }
 
 export const gamesApi = {
@@ -67,4 +87,10 @@ export const gamesApi = {
 
   subscribe: (id: string, email: string) =>
     client.post(`/games/${id}/subscribe`, { email }),
+
+  lookupSearch: (q: string) =>
+    client.get<RawgSearchResult[]>("/games/lookup", { params: { q } }).then((r) => r.data),
+
+  lookupDetail: (rawgId: number) =>
+    client.get<RawgGameDetail>(`/games/lookup/${rawgId}`).then((r) => r.data),
 };

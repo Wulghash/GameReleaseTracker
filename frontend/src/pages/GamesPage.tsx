@@ -59,8 +59,9 @@ export function GamesPage() {
 
     const map = new Map<string, { label: string; games: typeof games }>();
     for (const game of games) {
-      const key = format(new Date(game.releaseDate), "yyyy-MM");
-      const label = format(new Date(game.releaseDate), "MMMM yyyy");
+      const year = game.releaseDate.slice(0, 4);
+      const key = game.tba ? `tba-${year}` : format(new Date(game.releaseDate), "yyyy-MM");
+      const label = game.tba ? `${year} — TBA` : format(new Date(game.releaseDate), "MMMM yyyy");
       if (!map.has(key)) map.set(key, { label, games: [] });
       map.get(key)!.games.push(game);
     }

@@ -36,5 +36,6 @@ public record GameRequest(
         String imageUrl,
 
         String developer,
-        String publisher
+        String publisher,
+        boolean tba
 ) {}

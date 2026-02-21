@@ -1,0 +1,1 @@
+ALTER TABLE games ADD COLUMN tba boolean NOT NULL DEFAULT false;
