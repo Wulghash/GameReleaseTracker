@@ -47,6 +47,7 @@ public class GameService implements GameUseCase {
                 .imageUrl(request.imageUrl())
                 .developer(request.developer())
                 .publisher(request.publisher())
+                .igdbId(request.igdbId())
                 .tba(request.tba())
                 .createdAt(now)
                 .updatedAt(now)
@@ -83,6 +84,7 @@ public class GameService implements GameUseCase {
                 .imageUrl(request.imageUrl())
                 .developer(request.developer())
                 .publisher(request.publisher())
+                .igdbId(request.igdbId())
                 .tba(request.tba())
                 .updatedAt(LocalDateTime.now())
                 .build();

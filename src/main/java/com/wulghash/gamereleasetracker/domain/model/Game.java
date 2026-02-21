@@ -26,6 +26,7 @@ public class Game {
     private final String imageUrl;
     private final String developer;
     private final String publisher;
+    private final Long igdbId;
     private final boolean tba;
     private final LocalDateTime createdAt;
     private final LocalDateTime updatedAt;

@@ -53,6 +53,9 @@ public class GameJpaEntity {
     private String developer;
     private String publisher;
 
+    @Column(name = "igdb_id")
+    private Long igdbId;
+
     @Column(nullable = false)
     private boolean tba;
 
@@ -76,6 +79,7 @@ public class GameJpaEntity {
         entity.imageUrl = game.getImageUrl();
         entity.developer = game.getDeveloper();
         entity.publisher = game.getPublisher();
+        entity.igdbId = game.getIgdbId();
         entity.tba = game.isTba();
         entity.createdAt = game.getCreatedAt();
         entity.updatedAt = game.getUpdatedAt();
@@ -94,6 +98,7 @@ public class GameJpaEntity {
                 .imageUrl(imageUrl)
                 .developer(developer)
                 .publisher(publisher)
+                .igdbId(igdbId)
                 .tba(tba)
                 .createdAt(createdAt)
                 .updatedAt(updatedAt)

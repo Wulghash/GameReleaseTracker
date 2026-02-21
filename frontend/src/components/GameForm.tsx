@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, type FormEvent } from "react";
-import type { Game, GameFormData, Platform, RawgSearchResult } from "../api/games";
+import type { Game, GameFormData, Platform, IgdbSearchResult } from "../api/games";
 import { gamesApi } from "../api/games";
 import { Input } from "./ui/Input";
 import { Button } from "./ui/Button";
@@ -24,6 +24,7 @@ export function GameForm({ initial, onSubmit, onCancel }: GameFormProps) {
   const [imageUrl, setImageUrl] = useState(initial?.imageUrl ?? "");
   const [developer, setDeveloper] = useState(initial?.developer ?? "");
   const [publisher, setPublisher] = useState(initial?.publisher ?? "");
+  const [igdbId, setIgdbId] = useState<number | undefined>(initial?.igdbId ?? undefined);
   const [tba, setTba] = useState(initial?.tba ?? false);
   const [releaseYear, setReleaseYear] = useState(
     initial?.tba ? initial.releaseDate.slice(0, 4) : String(new Date().getFullYear())
@@ -31,8 +32,8 @@ export function GameForm({ initial, onSubmit, onCancel }: GameFormProps) {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
 
-  // RAWG search state
-  const [searchResults, setSearchResults] = useState<RawgSearchResult[]>([]);
+  // IGDB search state
+  const [searchResults, setSearchResults] = useState<IgdbSearchResult[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
   const [prefilled, setPrefilled] = useState(false);
   const [prefillLoading, setPrefillLoading] = useState(false);
@@ -52,7 +53,7 @@ export function GameForm({ initial, onSubmit, onCancel }: GameFormProps) {
     return () => document.removeEventListener("mousedown", handleMouseDown);
   }, []);
 
-  // Debounced RAWG search — only for new games (not edit form)
+  // Debounced IGDB search — only for new games (not edit form)
   useEffect(() => {
     if (initial) return;
     if (suppressSearch.current) {
@@ -85,11 +86,12 @@ export function GameForm({ initial, onSubmit, onCancel }: GameFormProps) {
     };
   }, [title, initial]);
 
-  async function selectResult(result: RawgSearchResult) {
+  async function selectResult(result: IgdbSearchResult) {
     setShowDropdown(false);
     setPrefillLoading(true);
+    setIgdbId(result.igdbId);
     try {
-      const detail = await gamesApi.lookupDetail(result.rawgId);
+      const detail = await gamesApi.lookupDetail(result.igdbId);
       suppressSearch.current = true;
       setTitle(detail.title ?? result.title);
       if (detail.releaseDate) {
@@ -153,6 +155,7 @@ export function GameForm({ initial, onSubmit, onCancel }: GameFormProps) {
         imageUrl: imageUrl.trim() || undefined,
         developer: developer.trim() || undefined,
         publisher: publisher.trim() || undefined,
+        igdbId,
         tba,
       });
     } finally {
@@ -204,7 +207,7 @@ export function GameForm({ initial, onSubmit, onCancel }: GameFormProps) {
           <div className="absolute left-0 right-0 top-full z-50 mt-1 rounded-xl border border-gray-200 bg-white shadow-lg overflow-hidden">
             {searchResults.map((r) => (
               <button
-                key={r.rawgId}
+                key={r.igdbId}
                 type="button"
                 onMouseDown={(e) => e.preventDefault()} // prevent blur before click
                 onClick={() => selectResult(r)}

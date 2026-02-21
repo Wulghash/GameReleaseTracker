@@ -37,5 +37,6 @@ public record GameRequest(
 
         String developer,
         String publisher,
+        Long igdbId,
         boolean tba
 ) {}

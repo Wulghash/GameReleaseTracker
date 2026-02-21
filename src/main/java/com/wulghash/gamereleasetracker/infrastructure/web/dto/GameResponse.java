@@ -20,6 +20,7 @@ public record GameResponse(
         String imageUrl,
         String developer,
         String publisher,
+        Long igdbId,
         boolean tba,
         LocalDateTime createdAt,
         LocalDateTime updatedAt
@@ -36,6 +37,7 @@ public record GameResponse(
                 game.getImageUrl(),
                 game.getDeveloper(),
                 game.getPublisher(),
+                game.getIgdbId(),
                 game.isTba(),
                 game.getCreatedAt(),
                 game.getUpdatedAt()

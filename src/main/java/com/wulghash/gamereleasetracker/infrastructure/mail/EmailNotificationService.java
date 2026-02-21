@@ -1,6 +1,7 @@
 package com.wulghash.gamereleasetracker.infrastructure.mail;
 
 import com.wulghash.gamereleasetracker.domain.model.Game;
+import java.time.LocalDate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -58,6 +59,30 @@ public class EmailNotificationService {
                 Unsubscribe: %s/api/v1/unsubscribe/%s
                 """.formatted(
                 game.getTitle(),
+                game.getReleaseDate(),
+                game.getPlatforms(),
+                game.getShopUrl() != null ? "Shop: " + game.getShopUrl() : "",
+                baseUrl, unsubscribeToken
+        );
+
+        send(to, subject, body);
+    }
+
+    public void sendDateChanged(String to, Game game, LocalDate oldDate, UUID unsubscribeToken) {
+        String subject = game.getTitle() + " — release date updated";
+        String body = """
+                The release date for %s has changed.
+
+                Old date: %s
+                New date: %s
+                Platforms: %s
+                %s
+
+                ---
+                Unsubscribe: %s/api/v1/unsubscribe/%s
+                """.formatted(
+                game.getTitle(),
+                oldDate,
                 game.getReleaseDate(),
                 game.getPlatforms(),
                 game.getShopUrl() != null ? "Shop: " + game.getShopUrl() : "",
