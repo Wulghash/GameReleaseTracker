@@ -13,7 +13,6 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
-import java.time.Instant;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -54,11 +53,10 @@ public class IgdbClient {
             return List.of();
         }
 
-        long nowEpoch = Instant.now().getEpochSecond();
         String apicalypse = String.format(
                 "search \"%s\"; fields name,first_release_date,cover.url,platforms.id,status; " +
-                "where (first_release_date > %d | status = (2,3,4,7)) & status != (5,6); limit 10;",
-                query.replace("\"", "\\\""), nowEpoch);
+                "where status != (5,6,7,8); limit 10;",
+                query.replace("\"", "\\\""));
 
         List<IgdbGame> games = callApi("/games", apicalypse);
         return games.stream()
