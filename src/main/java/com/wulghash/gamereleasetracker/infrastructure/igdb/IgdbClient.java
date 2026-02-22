@@ -55,7 +55,7 @@ public class IgdbClient {
 
         String apicalypse = String.format(
                 "search \"%s\"; fields name,first_release_date,cover.url,platforms.id,status; " +
-                "where status != (5,6,7,8); limit 10;",
+                "where status = null | status != (5,6,7,8); limit 10;",
                 query.replace("\"", "\\\""));
 
         List<IgdbGame> games = callApi("/games", apicalypse);

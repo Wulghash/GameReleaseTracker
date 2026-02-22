@@ -1,5 +1,5 @@
 #!/bin/sh
-# DATABASE_URL may use postgres:// (Fly.io) or postgresql:// (Railway)
+# Railway sets DATABASE_URL as postgresql://user:pass@host:5432/db
 # Spring Boot needs it split into JDBC form.
 if [ -n "$DATABASE_URL" ]; then
   # Strip the scheme (handle both variants)
