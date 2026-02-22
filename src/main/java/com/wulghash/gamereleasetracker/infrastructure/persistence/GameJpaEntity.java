@@ -25,6 +25,9 @@ public class GameJpaEntity {
     @Id
     private UUID id;
 
+    @Column(name = "user_id", nullable = false)
+    private UUID userId;
+
     @Column(nullable = false)
     private String title;
 
@@ -68,6 +71,7 @@ public class GameJpaEntity {
     public static GameJpaEntity from(Game game) {
         GameJpaEntity entity = new GameJpaEntity();
         entity.id = game.getId();
+        entity.userId = game.getUserId();
         entity.title = game.getTitle();
         entity.description = game.getDescription();
         entity.releaseDate = game.getReleaseDate();
@@ -89,6 +93,7 @@ public class GameJpaEntity {
     public Game toDomain() {
         return Game.builder()
                 .id(id)
+                .userId(userId)
                 .title(title)
                 .description(description)
                 .releaseDate(releaseDate)

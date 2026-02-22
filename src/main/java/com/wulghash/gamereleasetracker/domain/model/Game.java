@@ -17,6 +17,8 @@ public class Game {
     @EqualsAndHashCode.Include
     private final UUID id;
 
+    private final UUID userId;
+
     private final String title;
     private final String description;
     private final LocalDate releaseDate;

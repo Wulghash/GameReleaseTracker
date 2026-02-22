@@ -6,9 +6,12 @@ import com.wulghash.gamereleasetracker.domain.model.GameNotFoundException;
 import com.wulghash.gamereleasetracker.domain.model.SubscriptionNotFoundException;
 import com.wulghash.gamereleasetracker.domain.port.in.SubscriptionUseCase;
 import com.wulghash.gamereleasetracker.infrastructure.web.dto.SubscribeRequest;
+import com.wulghash.gamereleasetracker.infrastructure.web.security.OAuth2UserService;
+import com.wulghash.gamereleasetracker.infrastructure.web.security.SecurityConfig;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -21,6 +24,11 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(SubscriptionController.class)
+@Import(SecurityConfig.class)
+@org.springframework.test.context.TestPropertySource(properties = {
+        "spring.security.oauth2.client.registration.google.client-id=test-id",
+        "spring.security.oauth2.client.registration.google.client-secret=test-secret"
+})
 class SubscriptionControllerTest {
 
     @Autowired
@@ -31,6 +39,9 @@ class SubscriptionControllerTest {
 
     @MockitoBean
     private SubscriptionUseCase subscriptionUseCase;
+
+    @MockitoBean
+    private OAuth2UserService oAuth2UserService;
 
     @Test
     void subscribeShouldReturn201() throws Exception {

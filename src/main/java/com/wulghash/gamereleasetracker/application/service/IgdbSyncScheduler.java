@@ -10,7 +10,6 @@ import com.wulghash.gamereleasetracker.infrastructure.mail.EmailNotificationServ
 import com.wulghash.gamereleasetracker.infrastructure.web.dto.GameLookupDetail;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -35,9 +34,7 @@ public class IgdbSyncScheduler {
         LocalDate today = LocalDate.now();
         log.info("Running IGDB sync for {}", today);
 
-        List<Game> upcomingGames = gameRepository
-                .findAll(null, GameStatus.UPCOMING, null, null, Pageable.unpaged())
-                .getContent();
+        List<Game> upcomingGames = gameRepository.findAllByStatus(GameStatus.UPCOMING);
 
         int refreshed = 0;
         int transitioned = 0;

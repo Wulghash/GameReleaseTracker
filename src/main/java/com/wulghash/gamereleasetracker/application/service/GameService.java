@@ -34,10 +34,11 @@ public class GameService implements GameUseCase {
 
     @Override
     @Transactional
-    public GameResponse create(GameRequest request) {
+    public GameResponse create(UUID userId, GameRequest request) {
         LocalDateTime now = LocalDateTime.now();
         Game game = Game.builder()
                 .id(UUID.randomUUID())
+                .userId(userId)
                 .title(request.title())
                 .description(request.description())
                 .releaseDate(request.releaseDate())
@@ -57,22 +58,22 @@ public class GameService implements GameUseCase {
     }
 
     @Override
-    public GameResponse getById(UUID id) {
-        return gameRepository.findById(id)
+    public GameResponse getById(UUID id, UUID userId) {
+        return gameRepository.findById(id, userId)
                 .map(GameResponse::from)
                 .orElseThrow(() -> new GameNotFoundException(id));
     }
 
     @Override
-    public Page<GameResponse> list(Platform platform, GameStatus status, LocalDate from, LocalDate to, Pageable pageable) {
-        return gameRepository.findAll(platform, status, from, to, pageable)
+    public Page<GameResponse> list(UUID userId, Platform platform, GameStatus status, LocalDate from, LocalDate to, Pageable pageable) {
+        return gameRepository.findAll(userId, platform, status, from, to, pageable)
                 .map(GameResponse::from);
     }
 
     @Override
     @Transactional
-    public GameResponse update(UUID id, GameRequest request) {
-        Game existing = gameRepository.findById(id)
+    public GameResponse update(UUID id, UUID userId, GameRequest request) {
+        Game existing = gameRepository.findById(id, userId)
                 .orElseThrow(() -> new GameNotFoundException(id));
 
         Game updated = existing.toBuilder()
@@ -94,8 +95,8 @@ public class GameService implements GameUseCase {
 
     @Override
     @Transactional
-    public GameResponse updateStatus(UUID id, GameStatus status) {
-        Game existing = gameRepository.findById(id)
+    public GameResponse updateStatus(UUID id, UUID userId, GameStatus status) {
+        Game existing = gameRepository.findById(id, userId)
                 .orElseThrow(() -> new GameNotFoundException(id));
 
         if (!existing.getStatus().canTransitionTo(status)) {
@@ -126,10 +127,10 @@ public class GameService implements GameUseCase {
 
     @Override
     @Transactional
-    public void delete(UUID id) {
-        if (!gameRepository.existsById(id)) {
+    public void delete(UUID id, UUID userId) {
+        if (!gameRepository.existsById(id, userId)) {
             throw new GameNotFoundException(id);
         }
-        gameRepository.deleteById(id);
+        gameRepository.deleteById(id, userId);
     }
 }

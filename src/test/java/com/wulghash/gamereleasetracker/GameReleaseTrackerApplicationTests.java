@@ -8,7 +8,10 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-@SpringBootTest
+@SpringBootTest(properties = {
+        "spring.security.oauth2.client.registration.google.client-id=test-id",
+        "spring.security.oauth2.client.registration.google.client-secret=test-secret"
+})
 @Testcontainers
 class GameReleaseTrackerApplicationTests {
 

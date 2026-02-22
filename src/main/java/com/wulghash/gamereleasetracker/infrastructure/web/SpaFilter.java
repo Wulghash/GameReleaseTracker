@@ -31,7 +31,9 @@ public class SpaFilter extends OncePerRequestFilter {
 
         String path = request.getRequestURI();
 
-        if (path.startsWith("/api/") || path.contains(".")) {
+        if (path.startsWith("/api/") || path.startsWith("/oauth2/")
+                || path.startsWith("/login/") || path.equals("/logout")
+                || path.contains(".")) {
             filterChain.doFilter(request, response);
             return;
         }

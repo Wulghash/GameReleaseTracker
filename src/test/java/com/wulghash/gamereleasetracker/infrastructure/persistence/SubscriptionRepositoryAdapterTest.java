@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -30,6 +31,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Import({SubscriptionRepositoryAdapter.class, GameRepositoryAdapter.class})
 class SubscriptionRepositoryAdapterTest {
 
+    static final UUID TEST_USER_ID = UUID.randomUUID();
+
     @Container
     static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16")
             .withDatabaseName("gamereleasetracker_test")
@@ -50,13 +53,24 @@ class SubscriptionRepositoryAdapterTest {
     @Autowired
     private GameRepositoryAdapter gameRepository;
 
+    @Autowired
+    private TestEntityManager em;
+
     private UUID gameId;
 
     @BeforeEach
     void setUp() {
-        // Subscriptions have a FK to games, so we need a persisted game first
+        AppUserJpaEntity user = new AppUserJpaEntity();
+        user.setId(TEST_USER_ID);
+        user.setGoogleId("google_" + TEST_USER_ID);
+        user.setEmail("test@example.com");
+        user.setName("Test User");
+        user.setCreatedAt(LocalDateTime.now());
+        em.persistAndFlush(user);
+
         var game = gameRepository.save(com.wulghash.gamereleasetracker.domain.model.Game.builder()
                 .id(UUID.randomUUID())
+                .userId(TEST_USER_ID)
                 .title("Test Game")
                 .releaseDate(LocalDate.of(2026, 6, 15))
                 .platforms(Set.of(Platform.PC))

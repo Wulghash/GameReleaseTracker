@@ -9,8 +9,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -18,7 +16,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -42,8 +39,7 @@ class NotificationSchedulerTest {
         Game game = buildGame(UUID.randomUUID(), "Elden Ring 2", today);
         Subscription sub = buildSubscription(game.getId(), "player@example.com");
 
-        when(gameRepository.findAll(null, GameStatus.UPCOMING, today, today, Pageable.unpaged()))
-                .thenReturn(new PageImpl<>(List.of(game)));
+        when(gameRepository.findAllByStatus(GameStatus.UPCOMING)).thenReturn(List.of(game));
         when(subscriptionRepository.findAllByGameId(game.getId())).thenReturn(List.of(sub));
 
         scheduler.sendReleaseNotifications();
@@ -57,8 +53,7 @@ class NotificationSchedulerTest {
         Game game = buildGame(UUID.randomUUID(), "Hollow Knight 2", inSevenDays);
         Subscription sub = buildSubscription(game.getId(), "player@example.com");
 
-        when(gameRepository.findAll(null, GameStatus.UPCOMING, inSevenDays, inSevenDays, Pageable.unpaged()))
-                .thenReturn(new PageImpl<>(List.of(game)));
+        when(gameRepository.findAllByStatus(GameStatus.UPCOMING)).thenReturn(List.of(game));
         when(subscriptionRepository.findAllByGameId(game.getId())).thenReturn(List.of(sub));
 
         scheduler.sendWeeklyReminders();
@@ -71,8 +66,7 @@ class NotificationSchedulerTest {
         LocalDate today = LocalDate.now();
         Game game = buildGame(UUID.randomUUID(), "Lonely Game", today);
 
-        when(gameRepository.findAll(null, GameStatus.UPCOMING, today, today, Pageable.unpaged()))
-                .thenReturn(new PageImpl<>(List.of(game)));
+        when(gameRepository.findAllByStatus(GameStatus.UPCOMING)).thenReturn(List.of(game));
         when(subscriptionRepository.findAllByGameId(game.getId())).thenReturn(List.of());
 
         scheduler.sendReleaseNotifications();
@@ -82,9 +76,7 @@ class NotificationSchedulerTest {
 
     @Test
     void shouldNotSendEmailsWhenNoGamesReleasingToday() {
-        LocalDate today = LocalDate.now();
-        when(gameRepository.findAll(null, GameStatus.UPCOMING, today, today, Pageable.unpaged()))
-                .thenReturn(new PageImpl<>(List.of()));
+        when(gameRepository.findAllByStatus(GameStatus.UPCOMING)).thenReturn(List.of());
 
         scheduler.sendReleaseNotifications();
 

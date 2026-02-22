@@ -10,6 +10,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -25,23 +26,37 @@ public class GameRepositoryAdapter implements GameRepository {
     }
 
     @Override
-    public Optional<Game> findById(UUID id) {
-        return jpaRepository.findById(id).map(GameJpaEntity::toDomain);
-    }
-
-    @Override
-    public Page<Game> findAll(Platform platform, GameStatus status, LocalDate from, LocalDate to, Pageable pageable) {
-        return jpaRepository.findAll(GameSpecification.withFilters(platform, status, from, to), pageable)
+    public Optional<Game> findById(UUID id, UUID userId) {
+        return jpaRepository.findOne(GameSpecification.withIdAndUserId(id, userId))
                 .map(GameJpaEntity::toDomain);
     }
 
     @Override
-    public void deleteById(UUID id) {
-        jpaRepository.deleteById(id);
+    public Page<Game> findAll(UUID userId, Platform platform, GameStatus status, LocalDate from, LocalDate to, Pageable pageable) {
+        return jpaRepository.findAll(GameSpecification.withFilters(userId, platform, status, from, to), pageable)
+                .map(GameJpaEntity::toDomain);
+    }
+
+    @Override
+    public void deleteById(UUID id, UUID userId) {
+        jpaRepository.findOne(GameSpecification.withIdAndUserId(id, userId))
+                .ifPresent(jpaRepository::delete);
+    }
+
+    @Override
+    public boolean existsById(UUID id, UUID userId) {
+        return jpaRepository.exists(GameSpecification.withIdAndUserId(id, userId));
     }
 
     @Override
     public boolean existsById(UUID id) {
         return jpaRepository.existsById(id);
+    }
+
+    @Override
+    public List<Game> findAllByStatus(GameStatus status) {
+        return jpaRepository.findByStatus(status).stream()
+                .map(GameJpaEntity::toDomain)
+                .toList();
     }
 }

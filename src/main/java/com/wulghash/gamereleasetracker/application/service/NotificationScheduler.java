@@ -8,7 +8,6 @@ import com.wulghash.gamereleasetracker.domain.port.out.SubscriptionRepository;
 import com.wulghash.gamereleasetracker.infrastructure.mail.EmailNotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -24,14 +23,14 @@ public class NotificationScheduler {
     private final SubscriptionRepository subscriptionRepository;
     private final EmailNotificationService emailNotificationService;
 
-    @Scheduled(cron = "0 0 9 * * *", zone = "Europe/Warsaw") // 9 AM daily
+    @Scheduled(cron = "0 0 9 * * *", zone = "Europe/Warsaw")
     public void sendReleaseNotifications() {
         LocalDate today = LocalDate.now();
         log.info("Running release-day notifications for {}", today);
 
-        List<Game> games = gameRepository
-                .findAll(null, GameStatus.UPCOMING, today, today, Pageable.unpaged())
-                .getContent();
+        List<Game> games = gameRepository.findAllByStatus(GameStatus.UPCOMING).stream()
+                .filter(g -> today.equals(g.getReleaseDate()))
+                .toList();
 
         for (Game game : games) {
             List<Subscription> subscribers = subscriptionRepository.findAllByGameId(game.getId());
@@ -43,14 +42,14 @@ public class NotificationScheduler {
         log.info("Release-day notifications sent for {} game(s)", games.size());
     }
 
-    @Scheduled(cron = "0 0 9 * * *", zone = "Europe/Warsaw") // 9 AM daily — runs alongside release notifications
+    @Scheduled(cron = "0 0 9 * * *", zone = "Europe/Warsaw")
     public void sendWeeklyReminders() {
         LocalDate inSevenDays = LocalDate.now().plusDays(7);
         log.info("Running 7-day reminder notifications for release date {}", inSevenDays);
 
-        List<Game> games = gameRepository
-                .findAll(null, GameStatus.UPCOMING, inSevenDays, inSevenDays, Pageable.unpaged())
-                .getContent();
+        List<Game> games = gameRepository.findAllByStatus(GameStatus.UPCOMING).stream()
+                .filter(g -> inSevenDays.equals(g.getReleaseDate()))
+                .toList();
 
         for (Game game : games) {
             List<Subscription> subscribers = subscriptionRepository.findAllByGameId(game.getId());

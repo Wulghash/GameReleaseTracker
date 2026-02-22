@@ -12,15 +12,15 @@ import java.util.UUID;
 
 public interface GameUseCase {
 
-    GameResponse create(GameRequest request);
+    GameResponse create(UUID userId, GameRequest request);
 
-    GameResponse getById(UUID id);
+    GameResponse getById(UUID id, UUID userId);
 
-    Page<GameResponse> list(Platform platform, GameStatus status, LocalDate from, LocalDate to, Pageable pageable);
+    Page<GameResponse> list(UUID userId, Platform platform, GameStatus status, LocalDate from, LocalDate to, Pageable pageable);
 
-    GameResponse update(UUID id, GameRequest request);
+    GameResponse update(UUID id, UUID userId, GameRequest request);
 
-    GameResponse updateStatus(UUID id, GameStatus status);
+    GameResponse updateStatus(UUID id, UUID userId, GameStatus status);
 
-    void delete(UUID id);
+    void delete(UUID id, UUID userId);
 }
