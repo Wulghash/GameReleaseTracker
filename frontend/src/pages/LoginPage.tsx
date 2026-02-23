@@ -2,7 +2,7 @@ import { Gamepad2 } from "lucide-react";
 
 export function LoginPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+    <div className="min-h-screen flex items-center justify-center bg-gray-100">
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-10 flex flex-col items-center gap-6 w-full max-w-sm">
         <div className="flex items-center gap-2.5 text-gray-700">
           <Gamepad2 size={22} className="text-brand-500" />

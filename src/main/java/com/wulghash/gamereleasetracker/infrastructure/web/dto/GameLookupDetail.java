@@ -11,5 +11,6 @@ public record GameLookupDetail(
         List<Platform> platforms,
         String description,
         String developer,
-        String publisher
+        String publisher,
+        Integer igdbScore
 ) {}

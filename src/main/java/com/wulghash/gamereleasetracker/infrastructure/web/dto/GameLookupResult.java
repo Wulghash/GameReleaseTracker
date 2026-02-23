@@ -9,5 +9,6 @@ public record GameLookupResult(
         String title,
         String releaseDate,
         String imageUrl,
-        List<Platform> platforms
+        List<Platform> platforms,
+        Integer igdbScore
 ) {}

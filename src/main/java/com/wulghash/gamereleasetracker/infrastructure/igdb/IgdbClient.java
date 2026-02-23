@@ -54,7 +54,7 @@ public class IgdbClient {
         }
 
         String apicalypse = String.format(
-                "search \"%s\"; fields name,first_release_date,cover.url,platforms.id,status; " +
+                "search \"%s\"; fields name,first_release_date,cover.url,platforms.id,status,aggregated_rating; " +
                 "where status = null | status != (5,6,7,8); limit 10;",
                 query.replace("\"", "\\\""));
 
@@ -65,7 +65,8 @@ public class IgdbClient {
                         g.name(),
                         g.firstReleaseDateAsString(),
                         g.coverUrl(),
-                        mapPlatforms(g.platforms())))
+                        mapPlatforms(g.platforms()),
+                        roundScore(g.aggregatedRating())))
                 .collect(Collectors.toList());
     }
 
@@ -78,7 +79,7 @@ public class IgdbClient {
         String apicalypse = String.format(
                 "fields name,first_release_date,cover.url,platforms.id," +
                 "involved_companies.company.name,involved_companies.developer,involved_companies.publisher," +
-                "summary; where id = %d; limit 1;",
+                "summary,aggregated_rating; where id = %d; limit 1;",
                 igdbId);
 
         List<IgdbGame> games = callApi("/games", apicalypse);
@@ -107,7 +108,8 @@ public class IgdbClient {
                 mapPlatforms(g.platforms()),
                 g.summary(),
                 developer,
-                publisher);
+                publisher,
+                roundScore(g.aggregatedRating()));
     }
 
     private List<IgdbGame> callApi(String path, String body) {
@@ -140,6 +142,10 @@ public class IgdbClient {
 
     // ---- IGDB response shapes ----
 
+    private static Integer roundScore(Double v) {
+        return v != null ? (int) Math.round(v) : null;
+    }
+
     @JsonIgnoreProperties(ignoreUnknown = true)
     record IgdbGame(
             long id,
@@ -149,7 +155,8 @@ public class IgdbClient {
             List<IgdbPlatform> platforms,
             @JsonProperty("involved_companies") List<IgdbInvolvedCompany> involvedCompanies,
             String summary,
-            Integer status
+            Integer status,
+            @JsonProperty("aggregated_rating") Double aggregatedRating
     ) {
         String firstReleaseDateAsString() {
             if (firstReleaseDateEpoch == null) return null;

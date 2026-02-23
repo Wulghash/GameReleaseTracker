@@ -57,6 +57,7 @@ export interface IgdbSearchResult {
   releaseDate: string | null;
   imageUrl: string | null;
   platforms: Platform[];
+  igdbScore: number | null;
 }
 
 export interface IgdbGameDetail {
@@ -67,6 +68,7 @@ export interface IgdbGameDetail {
   description: string | null;
   developer: string | null;
   publisher: string | null;
+  igdbScore: number | null;
 }
 
 export const gamesApi = {

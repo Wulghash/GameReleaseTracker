@@ -1,5 +1,7 @@
 package com.wulghash.gamereleasetracker.infrastructure.web;
 
+import com.wulghash.gamereleasetracker.domain.model.BacklogEntryNotFoundException;
+import com.wulghash.gamereleasetracker.domain.model.GameAlreadyInBacklogException;
 import com.wulghash.gamereleasetracker.domain.model.GameAlreadySubscribedException;
 import com.wulghash.gamereleasetracker.domain.model.GameNotFoundException;
 import com.wulghash.gamereleasetracker.domain.model.InvalidStatusTransitionException;
@@ -17,15 +19,15 @@ import java.util.Map;
 @RestControllerAdvice
 class GlobalExceptionHandler {
 
-    @ExceptionHandler({GameNotFoundException.class, SubscriptionNotFoundException.class})
+    @ExceptionHandler({GameNotFoundException.class, SubscriptionNotFoundException.class, BacklogEntryNotFoundException.class})
     @ResponseStatus(HttpStatus.NOT_FOUND)
     Map<String, String> handleNotFound(RuntimeException ex) {
         return Map.of("message", ex.getMessage());
     }
 
-    @ExceptionHandler(GameAlreadySubscribedException.class)
+    @ExceptionHandler({GameAlreadySubscribedException.class, GameAlreadyInBacklogException.class})
     @ResponseStatus(HttpStatus.CONFLICT)
-    Map<String, String> handleConflict(GameAlreadySubscribedException ex) {
+    Map<String, String> handleConflict(RuntimeException ex) {
         return Map.of("message", ex.getMessage());
     }
 

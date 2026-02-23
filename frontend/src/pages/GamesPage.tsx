@@ -2,17 +2,11 @@ import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
 import { format } from "date-fns";
-import { gamesApi, type GameFormData, type Platform, type GameStatus } from "../api/games";
+import { gamesApi, type GameFormData, type Platform } from "../api/games";
 import { GameRow } from "../components/GameRow";
 import { GameForm } from "../components/GameForm";
 import { Modal } from "../components/ui/Modal";
 import { Button } from "../components/ui/Button";
-
-const STATUS_TABS: { value: GameStatus; label: string }[] = [
-  { value: "UPCOMING",  label: "Upcoming"  },
-  { value: "RELEASED",  label: "Released"  },
-  { value: "CANCELLED", label: "Cancelled" },
-];
 
 const PLATFORM_CHIPS: { value: Platform; label: string }[] = [
   { value: "PC",     label: "PC"     },
@@ -24,13 +18,12 @@ const PLATFORM_CHIPS: { value: Platform; label: string }[] = [
 export function GamesPage() {
   const queryClient = useQueryClient();
 
-  const [status, setStatus] = useState<GameStatus>("UPCOMING");
   const [activePlatforms, setActivePlatforms] = useState<Platform[]>([]);
   const [addOpen, setAddOpen] = useState(false);
 
   const { data, isLoading, isError } = useQuery({
-    queryKey: ["games", status],
-    queryFn: () => gamesApi.list({ status, size: 200, sort: "releaseDate,asc" }),
+    queryKey: ["games", "UPCOMING"],
+    queryFn: () => gamesApi.list({ status: "UPCOMING", size: 200, sort: "releaseDate,asc" }),
   });
 
   const createGame = useMutation({
@@ -70,23 +63,6 @@ export function GamesPage() {
 
   return (
     <div className="flex flex-col gap-8">
-
-      {/* Status tabs */}
-      <div className="flex gap-1 border-b border-gray-200">
-        {STATUS_TABS.map((tab) => (
-          <button
-            key={tab.value}
-            onClick={() => setStatus(tab.value)}
-            className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${
-              status === tab.value
-                ? "border-brand-500 text-brand-600"
-                : "border-transparent text-gray-500 hover:text-gray-700"
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
 
       {/* Platform chips + Add game */}
       <div className="flex items-center justify-between">

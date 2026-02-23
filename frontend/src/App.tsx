@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-quer
 import { Layout } from "./components/Layout";
 import { GamesPage } from "./pages/GamesPage";
 import { GameDetailPage } from "./pages/GameDetailPage";
+import { BacklogPage } from "./pages/BacklogPage";
 import { LoginPage } from "./pages/LoginPage";
 import { authApi } from "./api/auth";
 
@@ -21,7 +22,7 @@ function AppContent() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-gray-100">
         <div className="w-6 h-6 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
       </div>
     );
@@ -37,6 +38,7 @@ function AppContent() {
         <Routes>
           <Route path="/" element={<GamesPage />} />
           <Route path="/games/:id" element={<GameDetailPage />} />
+          <Route path="/backlog" element={<BacklogPage />} />
         </Routes>
       </Layout>
     </BrowserRouter>
