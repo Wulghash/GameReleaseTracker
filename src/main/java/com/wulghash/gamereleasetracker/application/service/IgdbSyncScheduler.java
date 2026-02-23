@@ -3,11 +3,10 @@ package com.wulghash.gamereleasetracker.application.service;
 import com.wulghash.gamereleasetracker.domain.model.Game;
 import com.wulghash.gamereleasetracker.domain.model.GameStatus;
 import com.wulghash.gamereleasetracker.domain.model.Subscription;
+import com.wulghash.gamereleasetracker.domain.port.out.GameLookupPort;
 import com.wulghash.gamereleasetracker.domain.port.out.GameRepository;
 import com.wulghash.gamereleasetracker.domain.port.out.SubscriptionRepository;
-import com.wulghash.gamereleasetracker.infrastructure.igdb.IgdbClient;
 import com.wulghash.gamereleasetracker.infrastructure.mail.EmailNotificationService;
-import com.wulghash.gamereleasetracker.infrastructure.web.dto.GameLookupDetail;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -16,6 +15,7 @@ import org.springframework.stereotype.Component;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Component
 @RequiredArgsConstructor
@@ -24,7 +24,7 @@ public class IgdbSyncScheduler {
 
     private final GameRepository gameRepository;
     private final SubscriptionRepository subscriptionRepository;
-    private final IgdbClient igdbClient;
+    private final GameLookupPort gameLookupPort;
     private final EmailNotificationService emailNotificationService;
 
     // Runs at 3 AM daily — before the 9 AM notification job, but only touches past-due games.
@@ -59,10 +59,10 @@ public class IgdbSyncScheduler {
 
     private boolean refreshDateFromIgdb(Game game) {
         try {
-            GameLookupDetail detail = igdbClient.getDetail(game.getIgdbId());
-            if (detail == null || detail.releaseDate() == null) return false;
+            Optional<LocalDate> newDateOpt = gameLookupPort.findReleaseDateByIgdbId(game.getIgdbId());
+            if (newDateOpt.isEmpty()) return false;
 
-            LocalDate newDate = LocalDate.parse(detail.releaseDate());
+            LocalDate newDate = newDateOpt.get();
             if (newDate.equals(game.getReleaseDate())) return false;
 
             LocalDate oldDate = game.getReleaseDate();

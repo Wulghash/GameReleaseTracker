@@ -25,5 +25,7 @@ public interface GameRepository {
 
     List<Game> findAllByStatus(GameStatus status);
 
+    List<Game> findAllByStatusAndReleaseDate(GameStatus status, LocalDate releaseDate);
+
     boolean existsByIdForAnyUser(UUID id);
 }

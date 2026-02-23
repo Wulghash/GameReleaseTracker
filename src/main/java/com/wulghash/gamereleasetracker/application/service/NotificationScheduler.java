@@ -28,9 +28,7 @@ public class NotificationScheduler {
         LocalDate today = LocalDate.now();
         log.info("Running release-day notifications for {}", today);
 
-        List<Game> games = gameRepository.findAllByStatus(GameStatus.UPCOMING).stream()
-                .filter(g -> today.equals(g.getReleaseDate()))
-                .toList();
+        List<Game> games = gameRepository.findAllByStatusAndReleaseDate(GameStatus.UPCOMING, today);
 
         for (Game game : games) {
             List<Subscription> subscribers = subscriptionRepository.findAllByGameId(game.getId());
@@ -47,9 +45,7 @@ public class NotificationScheduler {
         LocalDate inSevenDays = LocalDate.now().plusDays(7);
         log.info("Running 7-day reminder notifications for release date {}", inSevenDays);
 
-        List<Game> games = gameRepository.findAllByStatus(GameStatus.UPCOMING).stream()
-                .filter(g -> inSevenDays.equals(g.getReleaseDate()))
-                .toList();
+        List<Game> games = gameRepository.findAllByStatusAndReleaseDate(GameStatus.UPCOMING, inSevenDays);
 
         for (Game game : games) {
             List<Subscription> subscribers = subscriptionRepository.findAllByGameId(game.getId());

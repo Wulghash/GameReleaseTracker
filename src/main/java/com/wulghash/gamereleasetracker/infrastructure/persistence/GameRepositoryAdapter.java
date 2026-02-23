@@ -59,4 +59,11 @@ public class GameRepositoryAdapter implements GameRepository {
                 .map(GameJpaEntity::toDomain)
                 .toList();
     }
+
+    @Override
+    public List<Game> findAllByStatusAndReleaseDate(GameStatus status, LocalDate releaseDate) {
+        return jpaRepository.findByStatusAndReleaseDate(status, releaseDate).stream()
+                .map(GameJpaEntity::toDomain)
+                .toList();
+    }
 }

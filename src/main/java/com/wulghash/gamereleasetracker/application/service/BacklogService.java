@@ -58,9 +58,9 @@ public class BacklogService implements BacklogUseCase {
 
         BacklogEntry updated = existing.toBuilder()
                 .backlogStatus(cmd.backlogStatus() != null ? cmd.backlogStatus() : existing.getBacklogStatus())
-                .igdbScore(cmd.igdbScore() != null ? cmd.igdbScore() : existing.getIgdbScore())
-                .rating(cmd.rating() != null ? cmd.rating() : existing.getRating())
-                .notes(cmd.notes() != null ? cmd.notes() : existing.getNotes())
+                .igdbScore(cmd.igdbScore())
+                .rating(cmd.rating())
+                .notes(cmd.notes())
                 .updatedAt(LocalDateTime.now())
                 .build();
 

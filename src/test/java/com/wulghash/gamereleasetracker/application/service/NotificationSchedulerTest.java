@@ -16,6 +16,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -39,7 +41,8 @@ class NotificationSchedulerTest {
         Game game = buildGame(UUID.randomUUID(), "Elden Ring 2", today);
         Subscription sub = buildSubscription(game.getId(), "player@example.com");
 
-        when(gameRepository.findAllByStatus(GameStatus.UPCOMING)).thenReturn(List.of(game));
+        when(gameRepository.findAllByStatusAndReleaseDate(GameStatus.UPCOMING, today))
+                .thenReturn(List.of(game));
         when(subscriptionRepository.findAllByGameId(game.getId())).thenReturn(List.of(sub));
 
         scheduler.sendReleaseNotifications();
@@ -53,7 +56,8 @@ class NotificationSchedulerTest {
         Game game = buildGame(UUID.randomUUID(), "Hollow Knight 2", inSevenDays);
         Subscription sub = buildSubscription(game.getId(), "player@example.com");
 
-        when(gameRepository.findAllByStatus(GameStatus.UPCOMING)).thenReturn(List.of(game));
+        when(gameRepository.findAllByStatusAndReleaseDate(GameStatus.UPCOMING, inSevenDays))
+                .thenReturn(List.of(game));
         when(subscriptionRepository.findAllByGameId(game.getId())).thenReturn(List.of(sub));
 
         scheduler.sendWeeklyReminders();
@@ -66,7 +70,8 @@ class NotificationSchedulerTest {
         LocalDate today = LocalDate.now();
         Game game = buildGame(UUID.randomUUID(), "Lonely Game", today);
 
-        when(gameRepository.findAllByStatus(GameStatus.UPCOMING)).thenReturn(List.of(game));
+        when(gameRepository.findAllByStatusAndReleaseDate(GameStatus.UPCOMING, today))
+                .thenReturn(List.of(game));
         when(subscriptionRepository.findAllByGameId(game.getId())).thenReturn(List.of());
 
         scheduler.sendReleaseNotifications();
@@ -76,7 +81,8 @@ class NotificationSchedulerTest {
 
     @Test
     void shouldNotSendEmailsWhenNoGamesReleasingToday() {
-        when(gameRepository.findAllByStatus(GameStatus.UPCOMING)).thenReturn(List.of());
+        when(gameRepository.findAllByStatusAndReleaseDate(eq(GameStatus.UPCOMING), any(LocalDate.class)))
+                .thenReturn(List.of());
 
         scheduler.sendReleaseNotifications();
 

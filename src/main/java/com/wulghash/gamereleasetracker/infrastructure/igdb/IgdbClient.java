@@ -3,6 +3,7 @@ package com.wulghash.gamereleasetracker.infrastructure.igdb;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.wulghash.gamereleasetracker.domain.model.Platform;
+import com.wulghash.gamereleasetracker.domain.port.out.GameLookupPort;
 import com.wulghash.gamereleasetracker.infrastructure.web.dto.GameLookupDetail;
 import com.wulghash.gamereleasetracker.infrastructure.web.dto.GameLookupResult;
 import org.slf4j.Logger;
@@ -18,10 +19,11 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Component
-public class IgdbClient {
+public class IgdbClient implements GameLookupPort {
 
     private static final Logger log = LoggerFactory.getLogger(IgdbClient.class);
     private static final String BASE_URL = "https://api.igdb.com/v4";
@@ -110,6 +112,13 @@ public class IgdbClient {
                 developer,
                 publisher,
                 roundScore(g.aggregatedRating()));
+    }
+
+    @Override
+    public Optional<LocalDate> findReleaseDateByIgdbId(long igdbId) {
+        GameLookupDetail detail = getDetail(igdbId);
+        if (detail == null || detail.releaseDate() == null) return Optional.empty();
+        return Optional.of(LocalDate.parse(detail.releaseDate()));
     }
 
     private List<IgdbGame> callApi(String path, String body) {
