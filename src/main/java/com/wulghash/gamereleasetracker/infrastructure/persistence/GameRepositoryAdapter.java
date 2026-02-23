@@ -49,7 +49,7 @@ public class GameRepositoryAdapter implements GameRepository {
     }
 
     @Override
-    public boolean existsById(UUID id) {
+    public boolean existsByIdForAnyUser(UUID id) {
         return jpaRepository.existsById(id);
     }
 

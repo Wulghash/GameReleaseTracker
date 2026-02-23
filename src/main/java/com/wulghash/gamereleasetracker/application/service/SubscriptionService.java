@@ -25,7 +25,7 @@ public class SubscriptionService implements SubscriptionUseCase {
     @Override
     @Transactional
     public void subscribe(UUID gameId, String email) {
-        if (!gameRepository.existsById(gameId)) {
+        if (!gameRepository.existsByIdForAnyUser(gameId)) {
             throw new GameNotFoundException(gameId);
         }
         if (subscriptionRepository.existsByGameIdAndEmail(gameId, email)) {

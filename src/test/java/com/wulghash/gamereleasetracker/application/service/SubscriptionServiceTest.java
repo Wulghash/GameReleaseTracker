@@ -42,7 +42,7 @@ class SubscriptionServiceTest {
     @Test
     void subscribeShouldSaveSubscriptionWithGeneratedToken() {
         UUID gameId = UUID.randomUUID();
-        when(gameRepository.existsById(gameId)).thenReturn(true);
+        when(gameRepository.existsByIdForAnyUser(gameId)).thenReturn(true);
         when(subscriptionRepository.existsByGameIdAndEmail(gameId, "player@example.com")).thenReturn(false);
         when(subscriptionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
@@ -60,7 +60,7 @@ class SubscriptionServiceTest {
     @Test
     void subscribeShouldThrowWhenGameDoesNotExist() {
         UUID gameId = UUID.randomUUID();
-        when(gameRepository.existsById(gameId)).thenReturn(false);
+        when(gameRepository.existsByIdForAnyUser(gameId)).thenReturn(false);
 
         assertThatThrownBy(() -> subscriptionService.subscribe(gameId, "player@example.com"))
                 .isInstanceOf(GameNotFoundException.class);
@@ -69,7 +69,7 @@ class SubscriptionServiceTest {
     @Test
     void subscribeShouldThrowWhenAlreadySubscribed() {
         UUID gameId = UUID.randomUUID();
-        when(gameRepository.existsById(gameId)).thenReturn(true);
+        when(gameRepository.existsByIdForAnyUser(gameId)).thenReturn(true);
         when(subscriptionRepository.existsByGameIdAndEmail(gameId, "player@example.com")).thenReturn(true);
 
         assertThatThrownBy(() -> subscriptionService.subscribe(gameId, "player@example.com"))

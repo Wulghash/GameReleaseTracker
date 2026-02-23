@@ -32,13 +32,13 @@ public class GameController {
     @ResponseStatus(HttpStatus.CREATED)
     public GameResponse create(@Valid @RequestBody GameRequest request,
                                @AuthenticationPrincipal AppUserPrincipal principal) {
-        return gameUseCase.create(principal.getUserId(), request);
+        return GameResponse.from(gameUseCase.create(principal.getUserId(), toCommand(request)));
     }
 
     @GetMapping("/{id}")
     public GameResponse getById(@PathVariable UUID id,
                                 @AuthenticationPrincipal AppUserPrincipal principal) {
-        return gameUseCase.getById(id, principal.getUserId());
+        return GameResponse.from(gameUseCase.getById(id, principal.getUserId()));
     }
 
     @GetMapping
@@ -50,21 +50,22 @@ public class GameController {
             @PageableDefault(size = 20, sort = "releaseDate", direction = Sort.Direction.ASC) Pageable pageable,
             @AuthenticationPrincipal AppUserPrincipal principal
     ) {
-        return gameUseCase.list(principal.getUserId(), platform, status, from, to, pageable);
+        return gameUseCase.list(principal.getUserId(), platform, status, from, to, pageable)
+                .map(GameResponse::from);
     }
 
     @PutMapping("/{id}")
     public GameResponse update(@PathVariable UUID id,
                                @Valid @RequestBody GameRequest request,
                                @AuthenticationPrincipal AppUserPrincipal principal) {
-        return gameUseCase.update(id, principal.getUserId(), request);
+        return GameResponse.from(gameUseCase.update(id, principal.getUserId(), toCommand(request)));
     }
 
     @PatchMapping("/{id}/status")
     public GameResponse updateStatus(@PathVariable UUID id,
                                      @Valid @RequestBody GameStatusRequest request,
                                      @AuthenticationPrincipal AppUserPrincipal principal) {
-        return gameUseCase.updateStatus(id, principal.getUserId(), request.status());
+        return GameResponse.from(gameUseCase.updateStatus(id, principal.getUserId(), request.status()));
     }
 
     @DeleteMapping("/{id}")
@@ -72,5 +73,20 @@ public class GameController {
     public void delete(@PathVariable UUID id,
                        @AuthenticationPrincipal AppUserPrincipal principal) {
         gameUseCase.delete(id, principal.getUserId());
+    }
+
+    private static GameUseCase.GameCommand toCommand(GameRequest request) {
+        return new GameUseCase.GameCommand(
+                request.title(),
+                request.description(),
+                request.releaseDate(),
+                request.platforms(),
+                request.shopUrl(),
+                request.imageUrl(),
+                request.developer(),
+                request.publisher(),
+                request.igdbId(),
+                request.tba()
+        );
     }
 }

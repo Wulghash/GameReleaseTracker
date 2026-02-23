@@ -2,13 +2,13 @@ package com.wulghash.gamereleasetracker.infrastructure.web;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wulghash.gamereleasetracker.domain.model.AppUser;
+import com.wulghash.gamereleasetracker.domain.model.Game;
 import com.wulghash.gamereleasetracker.domain.model.GameNotFoundException;
 import com.wulghash.gamereleasetracker.domain.model.GameStatus;
 import com.wulghash.gamereleasetracker.domain.model.InvalidStatusTransitionException;
 import com.wulghash.gamereleasetracker.domain.model.Platform;
 import com.wulghash.gamereleasetracker.domain.port.in.GameUseCase;
 import com.wulghash.gamereleasetracker.infrastructure.web.dto.GameRequest;
-import com.wulghash.gamereleasetracker.infrastructure.web.dto.GameResponse;
 import com.wulghash.gamereleasetracker.infrastructure.web.dto.GameStatusRequest;
 import com.wulghash.gamereleasetracker.infrastructure.web.security.AppUserPrincipal;
 import com.wulghash.gamereleasetracker.infrastructure.web.security.OAuth2UserService;
@@ -79,8 +79,8 @@ class GameControllerTest {
                 .platforms(Set.of(Platform.PC))
                 .build();
 
-        GameResponse response = buildResponse(UUID.randomUUID(), "Elden Ring 2", GameStatus.UPCOMING);
-        when(gameUseCase.create(eq(TEST_USER_ID), any())).thenReturn(response);
+        when(gameUseCase.create(eq(TEST_USER_ID), any()))
+                .thenReturn(buildGame(UUID.randomUUID(), "Elden Ring 2", GameStatus.UPCOMING));
 
         mockMvc.perform(post("/api/v1/games")
                         .with(oauth2Login().oauth2User(mockPrincipal()))
@@ -125,7 +125,7 @@ class GameControllerTest {
     void getByIdShouldReturn200WhenFound() throws Exception {
         UUID id = UUID.randomUUID();
         when(gameUseCase.getById(id, TEST_USER_ID))
-                .thenReturn(buildResponse(id, "Hollow Knight 2", GameStatus.UPCOMING));
+                .thenReturn(buildGame(id, "Hollow Knight 2", GameStatus.UPCOMING));
 
         mockMvc.perform(get("/api/v1/games/{id}", id)
                         .with(oauth2Login().oauth2User(mockPrincipal())))
@@ -147,9 +147,9 @@ class GameControllerTest {
 
     @Test
     void getShouldReturnPagedList() throws Exception {
-        List<GameResponse> games = List.of(
-                buildResponse(UUID.randomUUID(), "Game A", GameStatus.UPCOMING),
-                buildResponse(UUID.randomUUID(), "Game B", GameStatus.UPCOMING)
+        List<Game> games = List.of(
+                buildGame(UUID.randomUUID(), "Game A", GameStatus.UPCOMING),
+                buildGame(UUID.randomUUID(), "Game B", GameStatus.UPCOMING)
         );
         when(gameUseCase.list(eq(TEST_USER_ID), any(), any(), any(), any(), any()))
                 .thenReturn(new PageImpl<>(games, PageRequest.of(0, 10), 2));
@@ -172,7 +172,7 @@ class GameControllerTest {
                 .build();
 
         when(gameUseCase.update(eq(id), eq(TEST_USER_ID), any()))
-                .thenReturn(buildResponse(id, "Updated Title", GameStatus.UPCOMING));
+                .thenReturn(buildGame(id, "Updated Title", GameStatus.UPCOMING));
 
         mockMvc.perform(put("/api/v1/games/{id}", id)
                         .with(oauth2Login().oauth2User(mockPrincipal()))
@@ -206,7 +206,7 @@ class GameControllerTest {
         UUID id = UUID.randomUUID();
         GameStatusRequest request = new GameStatusRequest(GameStatus.RELEASED);
         when(gameUseCase.updateStatus(eq(id), eq(TEST_USER_ID), eq(GameStatus.RELEASED)))
-                .thenReturn(buildResponse(id, "Elden Ring 2", GameStatus.RELEASED));
+                .thenReturn(buildGame(id, "Elden Ring 2", GameStatus.RELEASED));
 
         mockMvc.perform(patch("/api/v1/games/{id}/status", id)
                         .with(oauth2Login().oauth2User(mockPrincipal()))
@@ -266,16 +266,18 @@ class GameControllerTest {
                 .andExpect(status().isNotFound());
     }
 
-    private GameResponse buildResponse(UUID id, String title, GameStatus status) {
-        return new GameResponse(
-                id, title, null,
-                LocalDate.of(2026, 6, 15),
-                Set.of(Platform.PC),
-                status,
-                null, null, null, null,
-                null,
-                false,
-                LocalDateTime.now(), LocalDateTime.now()
-        );
+    private Game buildGame(UUID id, String title, GameStatus status) {
+        LocalDateTime now = LocalDateTime.now();
+        return Game.builder()
+                .id(id)
+                .userId(TEST_USER_ID)
+                .title(title)
+                .releaseDate(LocalDate.of(2026, 6, 15))
+                .platforms(Set.of(Platform.PC))
+                .status(status)
+                .tba(false)
+                .createdAt(now)
+                .updatedAt(now)
+                .build();
     }
 }

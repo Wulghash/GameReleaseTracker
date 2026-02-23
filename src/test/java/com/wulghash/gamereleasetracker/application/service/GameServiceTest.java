@@ -6,11 +6,10 @@ import com.wulghash.gamereleasetracker.domain.model.GameStatus;
 import com.wulghash.gamereleasetracker.domain.model.InvalidStatusTransitionException;
 import com.wulghash.gamereleasetracker.domain.model.Platform;
 import com.wulghash.gamereleasetracker.domain.model.Subscription;
+import com.wulghash.gamereleasetracker.domain.port.in.GameUseCase;
 import com.wulghash.gamereleasetracker.domain.port.out.GameRepository;
 import com.wulghash.gamereleasetracker.domain.port.out.SubscriptionRepository;
 import com.wulghash.gamereleasetracker.infrastructure.mail.EmailNotificationService;
-import com.wulghash.gamereleasetracker.infrastructure.web.dto.GameRequest;
-import com.wulghash.gamereleasetracker.infrastructure.web.dto.GameResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -58,19 +57,18 @@ class GameServiceTest {
 
     @Test
     void createShouldSaveWithUpcomingStatusAndReturnGame() {
-        GameRequest request = GameRequest.builder()
-                .title("Elden Ring 2")
-                .releaseDate(LocalDate.of(2026, 6, 15))
-                .platforms(Set.of(Platform.PC, Platform.PS5))
-                .developer("FromSoftware")
-                .build();
+        GameUseCase.GameCommand cmd = new GameUseCase.GameCommand(
+                "Elden Ring 2", null,
+                LocalDate.of(2026, 6, 15),
+                Set.of(Platform.PC, Platform.PS5),
+                null, null, "FromSoftware", null, null, false);
 
         Game savedGame = buildGame(UUID.randomUUID(), "Elden Ring 2", GameStatus.UPCOMING);
         when(gameRepository.save(any(Game.class))).thenReturn(savedGame);
 
-        GameResponse response = gameService.create(USER_ID, request);
+        Game result = gameService.create(USER_ID, cmd);
 
-        assertThat(response.title()).isEqualTo("Elden Ring 2");
+        assertThat(result.getTitle()).isEqualTo("Elden Ring 2");
         ArgumentCaptor<Game> captor = ArgumentCaptor.forClass(Game.class);
         verify(gameRepository).save(captor.capture());
         assertThat(captor.getValue().getTitle()).isEqualTo("Elden Ring 2");
@@ -85,10 +83,10 @@ class GameServiceTest {
         Game game = buildGame(id, "Hollow Knight 2", GameStatus.UPCOMING);
         when(gameRepository.findById(id, USER_ID)).thenReturn(Optional.of(game));
 
-        GameResponse response = gameService.getById(id, USER_ID);
+        Game result = gameService.getById(id, USER_ID);
 
-        assertThat(response.id()).isEqualTo(id);
-        assertThat(response.title()).isEqualTo("Hollow Knight 2");
+        assertThat(result.getId()).isEqualTo(id);
+        assertThat(result.getTitle()).isEqualTo("Hollow Knight 2");
     }
 
     @Test
@@ -111,7 +109,7 @@ class GameServiceTest {
         when(gameRepository.findAll(USER_ID, null, null, null, null, pageable))
                 .thenReturn(new PageImpl<>(games, pageable, 2));
 
-        Page<GameResponse> result = gameService.list(USER_ID, null, null, null, null, pageable);
+        Page<Game> result = gameService.list(USER_ID, null, null, null, null, pageable);
 
         assertThat(result.getContent()).hasSize(2);
         assertThat(result.getTotalElements()).isEqualTo(2);
@@ -121,19 +119,19 @@ class GameServiceTest {
     void updateShouldPreserveExistingStatus() {
         UUID id = UUID.randomUUID();
         Game existing = buildGame(id, "Old Title", GameStatus.UPCOMING);
-        GameRequest request = GameRequest.builder()
-                .title("New Title")
-                .releaseDate(LocalDate.of(2027, 1, 1))
-                .platforms(Set.of(Platform.PC))
-                .build();
+        GameUseCase.GameCommand cmd = new GameUseCase.GameCommand(
+                "New Title", null,
+                LocalDate.of(2027, 1, 1),
+                Set.of(Platform.PC),
+                null, null, null, null, null, false);
 
         when(gameRepository.findById(id, USER_ID)).thenReturn(Optional.of(existing));
         when(gameRepository.save(any(Game.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        GameResponse response = gameService.update(id, USER_ID, request);
+        Game result = gameService.update(id, USER_ID, cmd);
 
-        assertThat(response.title()).isEqualTo("New Title");
-        assertThat(response.id()).isEqualTo(id);
+        assertThat(result.getTitle()).isEqualTo("New Title");
+        assertThat(result.getId()).isEqualTo(id);
         ArgumentCaptor<Game> captor = ArgumentCaptor.forClass(Game.class);
         verify(gameRepository).save(captor.capture());
         assertThat(captor.getValue().getStatus()).isEqualTo(GameStatus.UPCOMING);
@@ -144,13 +142,11 @@ class GameServiceTest {
         UUID id = UUID.randomUUID();
         when(gameRepository.findById(id, USER_ID)).thenReturn(Optional.empty());
 
-        GameRequest request = GameRequest.builder()
-                .title("Any")
-                .releaseDate(LocalDate.now())
-                .platforms(Set.of(Platform.PC))
-                .build();
+        GameUseCase.GameCommand cmd = new GameUseCase.GameCommand(
+                "Any", null, LocalDate.now(), Set.of(Platform.PC),
+                null, null, null, null, null, false);
 
-        assertThatThrownBy(() -> gameService.update(id, USER_ID, request))
+        assertThatThrownBy(() -> gameService.update(id, USER_ID, cmd))
                 .isInstanceOf(GameNotFoundException.class);
     }
 
@@ -161,10 +157,10 @@ class GameServiceTest {
         when(gameRepository.findById(id, USER_ID)).thenReturn(Optional.of(existing));
         when(gameRepository.save(any(Game.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        GameResponse response = gameService.updateStatus(id, USER_ID, GameStatus.RELEASED);
+        Game result = gameService.updateStatus(id, USER_ID, GameStatus.RELEASED);
 
-        assertThat(response.status()).isEqualTo(GameStatus.RELEASED);
-        assertThat(response.title()).isEqualTo("Elden Ring 2");
+        assertThat(result.getStatus()).isEqualTo(GameStatus.RELEASED);
+        assertThat(result.getTitle()).isEqualTo("Elden Ring 2");
     }
 
     @Test
@@ -216,9 +212,9 @@ class GameServiceTest {
         when(gameRepository.save(any(Game.class))).thenAnswer(inv -> inv.getArgument(0));
         when(subscriptionRepository.findAllByGameId(id)).thenReturn(List.of(subscription));
 
-        GameResponse response = gameService.updateStatus(id, USER_ID, GameStatus.CANCELLED);
+        Game result = gameService.updateStatus(id, USER_ID, GameStatus.CANCELLED);
 
-        assertThat(response.status()).isEqualTo(GameStatus.CANCELLED);
+        assertThat(result.getStatus()).isEqualTo(GameStatus.CANCELLED);
         verify(emailNotificationService).sendCancellation(eq("fan@example.com"), any(Game.class));
         verify(subscriptionRepository).deleteById(subId);
     }
@@ -251,6 +247,7 @@ class GameServiceTest {
                 .releaseDate(LocalDate.of(2026, 6, 15))
                 .platforms(Set.of(Platform.PC))
                 .status(status)
+                .tba(false)
                 .createdAt(now)
                 .updatedAt(now)
                 .build();

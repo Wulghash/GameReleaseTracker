@@ -10,8 +10,6 @@ import com.wulghash.gamereleasetracker.domain.port.in.GameUseCase;
 import com.wulghash.gamereleasetracker.domain.port.out.GameRepository;
 import com.wulghash.gamereleasetracker.domain.port.out.SubscriptionRepository;
 import com.wulghash.gamereleasetracker.infrastructure.mail.EmailNotificationService;
-import com.wulghash.gamereleasetracker.infrastructure.web.dto.GameRequest;
-import com.wulghash.gamereleasetracker.infrastructure.web.dto.GameResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -34,68 +32,66 @@ public class GameService implements GameUseCase {
 
     @Override
     @Transactional
-    public GameResponse create(UUID userId, GameRequest request) {
+    public Game create(UUID userId, GameCommand cmd) {
         LocalDateTime now = LocalDateTime.now();
         Game game = Game.builder()
                 .id(UUID.randomUUID())
                 .userId(userId)
-                .title(request.title())
-                .description(request.description())
-                .releaseDate(request.releaseDate())
-                .platforms(request.platforms())
+                .title(cmd.title())
+                .description(cmd.description())
+                .releaseDate(cmd.releaseDate())
+                .platforms(cmd.platforms())
                 .status(GameStatus.UPCOMING)
-                .shopUrl(request.shopUrl())
-                .imageUrl(request.imageUrl())
-                .developer(request.developer())
-                .publisher(request.publisher())
-                .igdbId(request.igdbId())
-                .tba(request.tba())
+                .shopUrl(cmd.shopUrl())
+                .imageUrl(cmd.imageUrl())
+                .developer(cmd.developer())
+                .publisher(cmd.publisher())
+                .igdbId(cmd.igdbId())
+                .tba(cmd.tba())
                 .createdAt(now)
                 .updatedAt(now)
                 .build();
 
-        return GameResponse.from(gameRepository.save(game));
+        return gameRepository.save(game);
     }
 
     @Override
-    public GameResponse getById(UUID id, UUID userId) {
+    public Game getById(UUID id, UUID userId) {
         return gameRepository.findById(id, userId)
-                .map(GameResponse::from)
                 .orElseThrow(() -> new GameNotFoundException(id));
     }
 
     @Override
-    public Page<GameResponse> list(UUID userId, Platform platform, GameStatus status, LocalDate from, LocalDate to, Pageable pageable) {
-        return gameRepository.findAll(userId, platform, status, from, to, pageable)
-                .map(GameResponse::from);
+    public Page<Game> list(UUID userId, Platform platform, GameStatus status, LocalDate from, LocalDate to, Pageable pageable) {
+        return gameRepository.findAll(userId, platform, status, from, to, pageable);
     }
 
     @Override
     @Transactional
-    public GameResponse update(UUID id, UUID userId, GameRequest request) {
+    public Game update(UUID id, UUID userId, GameCommand cmd) {
         Game existing = gameRepository.findById(id, userId)
                 .orElseThrow(() -> new GameNotFoundException(id));
 
         Game updated = existing.toBuilder()
-                .title(request.title())
-                .description(request.description())
-                .releaseDate(request.releaseDate())
-                .platforms(request.platforms())
-                .shopUrl(request.shopUrl())
-                .imageUrl(request.imageUrl())
-                .developer(request.developer())
-                .publisher(request.publisher())
-                .igdbId(request.igdbId())
-                .tba(request.tba())
+                .title(cmd.title())
+                .description(cmd.description())
+                .releaseDate(cmd.releaseDate())
+                .platforms(cmd.platforms())
+                .shopUrl(cmd.shopUrl())
+                .imageUrl(cmd.imageUrl())
+                .developer(cmd.developer())
+                .publisher(cmd.publisher())
+                .igdbId(cmd.igdbId())
+                .tba(cmd.tba())
                 .updatedAt(LocalDateTime.now())
                 .build();
 
-        return GameResponse.from(gameRepository.save(updated));
+        return gameRepository.save(updated);
     }
 
     @Override
     @Transactional
-    public GameResponse updateStatus(UUID id, UUID userId, GameStatus status) {
+    public Game updateStatus(UUID id, UUID userId, GameStatus status) {
         Game existing = gameRepository.findById(id, userId)
                 .orElseThrow(() -> new GameNotFoundException(id));
 
@@ -114,7 +110,7 @@ public class GameService implements GameUseCase {
             notifyAndRemoveSubscribers(saved);
         }
 
-        return GameResponse.from(saved);
+        return saved;
     }
 
     private void notifyAndRemoveSubscribers(Game game) {
