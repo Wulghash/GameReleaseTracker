@@ -1,17 +1,23 @@
 # Game Release Tracker
 
-A Spring Boot REST API for tracking upcoming video game releases. Add games manually, filter by platform or status, and subscribe to email notifications before a game drops.
+A full-stack web app for tracking upcoming video game releases. Browse and search games via IGDB, maintain a personal backlog with status tracking and critic scores, and subscribe to email reminders before a game drops.
 
 ---
 
 ## Features
 
+- **Google OAuth2 login** — sign in with your Google account; all data is user-specific
 - **Game catalog** — create, update, and delete upcoming games with release dates, platforms, shop URLs, and cover images
+- **IGDB search** — look up games from IGDB's database and prefill the form automatically
 - **Status tracking** — games move through `UPCOMING → RELEASED` (or `CANCELLED`)
-- **Filtering** — filter the game list by platform, status, and release date range with pagination
-- **Email subscriptions** — subscribe to a game with an email address and receive:
+- **Automatic release sync** — a daily job (3 AM) refreshes release dates from IGDB and auto-transitions past-due games to RELEASED
+- **Filtering** — filter games by platform, status, and release date range with pagination
+- **Personal backlog** — track games with statuses: `WANT_TO_PLAY`, `PLAYING`, `COMPLETED`, `DROPPED`
+- **Critic score badge** — shows IGDB `aggregated_rating` (0–100) on each backlog card, colour-coded by tier; refresh on demand
+- **Email subscriptions** — subscribe to a game to receive:
   - A reminder **7 days before** release
   - A notification **on release day**
+  - A notice when a **release date changes**
 - **Unsubscribe** — one-click unsubscribe link included in every email
 
 ---
@@ -23,9 +29,12 @@ A Spring Boot REST API for tracking upcoming video game releases. Add games manu
 | Language | Java 17 |
 | Framework | Spring Boot 3.5 |
 | Persistence | PostgreSQL + Spring Data JPA + Flyway |
-| Email | Spring Mail (MailHog for local dev) |
+| Security | Spring Security + Google OAuth2 |
+| External API | IGDB (via Twitch OAuth2 client credentials) |
+| Email | Spring Mail — optional; MailHog for local dev |
 | Build | Maven |
 | Testing | JUnit 5, Mockito, Testcontainers |
+| Frontend | React 18, TypeScript, Vite, Tailwind CSS, TanStack Query |
 
 ---
 
@@ -36,16 +45,21 @@ Hexagonal (Ports & Adapters) — the domain has zero framework dependencies.
 ```
 src/main/java/com/wulghash/gamereleasetracker/
 ├── domain/
-│   ├── model/          # Game, GameStatus, Platform, Subscription (pure Java)
+│   ├── model/          # Game, GameStatus, Platform, Subscription, BacklogEntry,
+│   │                   # AppUser, BacklogStatus (pure Java)
 │   └── port/
-│       ├── in/         # GameUseCase, SubscriptionUseCase (input ports)
-│       └── out/        # GameRepository, SubscriptionRepository (output ports)
+│       ├── in/         # GameUseCase (+ GameCommand), SubscriptionUseCase, BacklogUseCase
+│       └── out/        # GameRepository, SubscriptionRepository, BacklogRepository,
+│                       # UserRepository, GameLookupPort
 ├── application/
-│   └── service/        # GameService, SubscriptionService, NotificationScheduler
+│   └── service/        # GameService, SubscriptionService, BacklogService,
+│                       # NotificationScheduler, IgdbSyncScheduler
 └── infrastructure/
+    ├── igdb/           # IgdbClient (implements GameLookupPort), IgdbTokenService
     ├── persistence/    # JPA entities, Spring Data repos, adapters
+    ├── security/       # SecurityConfig, AppUserPrincipal, OAuth2UserService
     ├── web/            # REST controllers, DTOs, GlobalExceptionHandler
-    └── mail/           # EmailNotificationService
+    └── mail/           # EmailNotificationService (optional — skipped if SMTP not configured)
 ```
 
 ---
@@ -55,24 +69,57 @@ src/main/java/com/wulghash/gamereleasetracker/
 ### Prerequisites
 
 - Java 17+
-- Docker (for PostgreSQL and MailHog)
+- Docker (for PostgreSQL; MailHog optional)
+- A Google OAuth2 client ID + secret ([Google Cloud Console](https://console.cloud.google.com/))
+- An IGDB / Twitch API client ID + secret ([Twitch Developer Portal](https://dev.twitch.tv/console))
+
+### Configuration
+
+Create `src/main/resources/application-local.properties` (gitignored) with your credentials:
+
+```properties
+# Google OAuth2
+spring.security.oauth2.client.registration.google.client-id=YOUR_GOOGLE_CLIENT_ID
+spring.security.oauth2.client.registration.google.client-secret=YOUR_GOOGLE_CLIENT_SECRET
+
+# IGDB (Twitch)
+app.igdb.client-id=YOUR_TWITCH_CLIENT_ID
+app.igdb.client-secret=YOUR_TWITCH_CLIENT_SECRET
+```
 
 ### Run locally
 
 ```bash
-# Start PostgreSQL and MailHog
+# Start PostgreSQL (and optional MailHog)
 docker-compose up -d
 
-# Start the application
+# Start the backend (activates the "local" profile automatically)
 ./mvnw spring-boot:run
+
+# Start the frontend dev server (in a separate terminal)
+cd frontend
+npm install
+npm run dev
 ```
 
-The API is available at `http://localhost:8080`.
-Sent emails are visible at `http://localhost:8025` (MailHog UI).
+| Service | URL |
+|---------|-----|
+| Frontend | `http://localhost:5173` |
+| Backend API | `http://localhost:8080` |
+| MailHog UI | `http://localhost:8025` |
 
 ---
 
 ## API Reference
+
+All `/api/**` endpoints require authentication (session cookie from Google OAuth2).
+
+### Auth
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/v1/me` | Returns the current user (`id`, `email`, `name`) |
+| `GET` | `/oauth2/authorization/google` | Initiates Google OAuth2 login |
 
 ### Games
 
@@ -97,39 +144,30 @@ Sent emails are visible at `http://localhost:8025` (MailHog UI).
 | `size` | integer | Page size (default 20) |
 | `sort` | string | Sort field (default `releaseDate,asc`) |
 
-**Create / Update game body:**
+### IGDB Lookup
 
-```json
-{
-  "title": "Elden Ring 2",
-  "description": "Sequel to the 2022 action RPG",
-  "releaseDate": "2026-06-15",
-  "platforms": ["PC", "PS5", "XBOX"],
-  "shopUrl": "https://store.steampowered.com/app/example",
-  "imageUrl": "https://example.com/cover.jpg",
-  "developer": "FromSoftware",
-  "publisher": "Bandai Namco"
-}
-```
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/v1/games/lookup?q={query}` | Search IGDB for games |
+| `GET` | `/api/v1/games/lookup/{igdbId}` | Fetch full detail for an IGDB game |
 
-**Update status body:**
+### Backlog
 
-```json
-{ "status": "RELEASED" }
-```
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/v1/backlog` | List backlog entries (optional `?status=` filter) |
+| `POST` | `/api/v1/backlog` | Add a game to the backlog |
+| `PUT` | `/api/v1/backlog/{id}` | Update a backlog entry (status, score, rating, notes) |
+| `DELETE` | `/api/v1/backlog/{id}` | Remove a game from the backlog |
+
+**Backlog statuses:** `WANT_TO_PLAY`, `PLAYING`, `COMPLETED`, `DROPPED`
 
 ### Subscriptions
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| `POST` | `/api/v1/games/{id}/subscribe` | Subscribe to a game |
-| `GET` | `/api/v1/unsubscribe/{token}` | Unsubscribe via email link |
-
-**Subscribe body:**
-
-```json
-{ "email": "player@example.com" }
-```
+| `POST` | `/api/v1/games/{id}/subscribe` | Subscribe to release notifications |
+| `GET` | `/api/v1/unsubscribe/{token}` | Unsubscribe via email link (public) |
 
 ### Response codes
 
@@ -139,8 +177,9 @@ Sent emails are visible at `http://localhost:8025` (MailHog UI).
 | `201` | Created |
 | `204` | No Content |
 | `400` | Validation error — `{"errors": [...]}` |
+| `401` | Unauthenticated |
 | `404` | Not found — `{"message": "..."}` |
-| `409` | Already subscribed — `{"message": "..."}` |
+| `409` | Conflict (duplicate) — `{"message": "..."}` |
 
 ---
 
@@ -151,28 +190,34 @@ Sent emails are visible at `http://localhost:8025` (MailHog UI).
 ./mvnw test
 ```
 
-Tests are split into four layers:
+**69 tests** across five layers:
 
 | Test class | Type | Count |
 |---|---|---|
 | `GameTest`, `SubscriptionTest` | Domain unit | 6 |
-| `GameServiceTest`, `SubscriptionServiceTest`, `NotificationSchedulerTest` | Service unit (Mockito) | 19 |
+| `GameServiceTest`, `SubscriptionServiceTest`, `NotificationSchedulerTest` | Service unit (Mockito) | 22 |
 | `GameRepositoryAdapterTest`, `SubscriptionRepositoryAdapterTest` | JPA integration (Testcontainers) | 17 |
-| `GameControllerTest`, `SubscriptionControllerTest` | Web slice (`@WebMvcTest`) | 18 |
+| `GameControllerTest`, `SubscriptionControllerTest` | Web slice (`@WebMvcTest`) | 19 |
 | `GameIntegrationTest`, `GameReleaseTrackerApplicationTests` | End-to-end (Testcontainers) | 5 |
+
+---
+
+## Scheduled Jobs
+
+| Job | Schedule | What it does |
+|-----|----------|--------------|
+| `NotificationScheduler` | 9 AM daily | Sends release-day and 7-day-reminder emails to subscribers |
+| `IgdbSyncScheduler` | 3 AM daily | Refreshes release dates from IGDB; auto-transitions past-due games to RELEASED; emails subscribers on date change |
 
 ---
 
 ## Email Notifications
 
-Notifications are sent daily at **9 AM** by a scheduled job:
+Email is **optional** — the app runs without an SMTP server configured (notifications are silently skipped).
 
-- **7-day reminder** — sent to all subscribers of a game releasing in exactly 7 days
-- **Release day** — sent to all subscribers of a game releasing today
+For local development, MailHog captures all outgoing mail at `http://localhost:8025`.
 
-Every email contains an unsubscribe link: `GET /api/v1/unsubscribe/{token}`
-
-In production, configure a real SMTP provider by overriding:
+For production, configure via environment variables or properties:
 
 ```properties
 spring.mail.host=smtp.your-provider.com
