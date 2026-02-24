@@ -57,7 +57,7 @@ public class IgdbClient implements GameLookupPort {
 
         String apicalypse = String.format(
                 "search \"%s\"; fields name,first_release_date,cover.url,platforms.id,status,aggregated_rating; " +
-                "where status = null | status != (5,6,7,8); limit 10;",
+                "where status = null | status != (4,5,6,7,8); limit 10;",
                 query.replace("\"", "\\\""));
 
         List<IgdbGame> games = callApi("/games", apicalypse);
@@ -116,9 +116,21 @@ public class IgdbClient implements GameLookupPort {
 
     @Override
     public Optional<LocalDate> findReleaseDateByIgdbId(long igdbId) {
-        GameLookupDetail detail = getDetail(igdbId);
-        if (detail == null || detail.releaseDate() == null) return Optional.empty();
-        return Optional.of(LocalDate.parse(detail.releaseDate()));
+        String apicalypse = String.format(
+                "fields first_release_date,status; where id = %d; limit 1;", igdbId);
+
+        List<IgdbGame> games = callApi("/games", apicalypse);
+        if (games.isEmpty()) return Optional.empty();
+
+        IgdbGame g = games.get(0);
+        if (Integer.valueOf(4).equals(g.status())) {
+            log.debug("Skipping date sync for igdbId={}: game is still in Early Access", igdbId);
+            return Optional.empty();
+        }
+
+        String dateStr = g.firstReleaseDateAsString();
+        if (dateStr == null) return Optional.empty();
+        return Optional.of(LocalDate.parse(dateStr));
     }
 
     private List<IgdbGame> callApi(String path, String body) {
